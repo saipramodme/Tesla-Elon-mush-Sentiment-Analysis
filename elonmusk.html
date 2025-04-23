@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elon Musk Sentiment Analysis</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background-color: #f5f8fa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .header img {
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border: 3px solid #1da1f2;
+        }
+        .chart-container {
+            width: 900px;
+            height: 550px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .bar {
+            transition: all 0.3s ease;
+        }
+        .positive {
+            fill: #4CAF50;
+        }
+        .neutral {
+            fill: #FFC107;
+        }
+        .negative {
+            fill: #F44336;
+        }
+        .axis text {
+            font-size: 12px;
+        }
+        .axis-label {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #14171a;
+            margin: 0;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #657786;
+            margin-top: 5px;
+        }
+        .legend {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .legend-item {
+            display: inline-block;
+            margin-right: 20px;
+            font-size: 14px;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            border-radius: 3px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #657786;
+            font-size: 12px;
+        }
+        .footer img {
+            height: 30px;
+            vertical-align: middle;
+            margin: 0 10px;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 5px;
+            pointer-events: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop2%29.jpg/1200px-Elon_Musk_Royal_Society_%28crop2%29.jpg" alt="Elon Musk">
+        <div>
+            <h1 class="title">Elon Musk Tweet Sentiment Analysis</h1>
+            <p class="subtitle">Sentiment distribution of last 100 tweets</p>
+        </div>
+        <img src="https://cdn-icons-png.flaticon.com/512/124/124021.png" alt="Twitter Logo">
+    </div>
+
+    <div class="chart-container">
+        <svg id="chart"></svg>
+    </div>
+    <div class="legend" id="legend"></div>
+
+    <div class="footer">
+        <img src="https://cdn-icons-png.flaticon.com/512/2103/2103633.png" alt="Analytics Icon">
+        Sentiment Analysis Visualization | Powered by D3.js
+        <img src="https://cdn-icons-png.flaticon.com/512/2103/2103633.png" alt="Analytics Icon">
+    </div>
+
+    <div class="tooltip" id="tooltip" style="opacity: 0;"></div>
+
+    <script>
+        // Sample data - in a real app, you would fetch this from an API
+        const sentimentData = [
+            { date: "2023-01-01", positive: 45, neutral: 30, negative: 25 },
+            { date: "2023-01-02", positive: 35, neutral: 40, negative: 25 },
+            { date: "2023-01-03", positive: 50, neutral: 25, negative: 25 },
+            { date: "2023-01-04", positive: 30, neutral: 35, negative: 35 },
+            { date: "2023-01-05", positive: 40, neutral: 30, negative: 30 },
+            { date: "2023-01-06", positive: 55, neutral: 20, negative: 25 },
+            { date: "2023-01-07", positive: 60, neutral: 15, negative: 25 },
+        ];
+
+        // Set up the chart dimensions
+        const margin = { top: 40, right: 30, bottom: 60, left: 60 };
+        const width = 860 - margin.left - margin.right;
+        const height = 450 - margin.top - margin.bottom;
+
+        // Create SVG element
+        const svg = d3.select("#chart")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Create scales
+        const x = d3.scaleBand()
+            .domain(sentimentData.map(d => d.date))
+            .range([0, width])
+            .padding(0.2);
+
+        const y = d3.scaleLinear()
+            .domain([0, 100])
+            .range([height, 0]);
+
+        // Add axes
+        svg.append("g")
+            .attr("class", "axis x-axis")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x));
+
+        svg.append("g")
+            .attr("class", "axis y-axis")
+            .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + "%"));
+
+        // Add axis labels
+        svg.append("text")
+            .attr("class", "axis-label")
+            .attr("x", width / 2)
+            .attr("y", height + margin.bottom - 10)
+            .style("text-anchor", "middle")
+            .text("Date");
+
+        svg.append("text")
+            .attr("class", "axis-label")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2)
+            .attr("y", -margin.left + 15)
+            .style("text-anchor", "middle")
+            .text("Sentiment Percentage");
+
+        // Prepare data for stacked bar chart
+        const categories = ["positive", "neutral", "negative"];
+        const stackedData = sentimentData.map(d => {
+            let total = 0;
+            const stacked = categories.map(category => {
+                const value = d[category];
+                const stack = {
+                    category,
+                    value,
+                    start: total,
+                    end: total + value
+                };
+                total += value;
+                return stack;
+            });
+            return { date: d.date, stacked };
+        });
+
+        // Tooltip setup
+        const tooltip = d3.select("#tooltip");
+
+        // Create stacked bars with hover effects
+        svg.selectAll(".date-group")
+            .data(stackedData)
+            .enter()
+            .append("g")
+            .attr("class", "date-group")
+            .attr("transform", d => `translate(${x(d.date)},0)`)
+            .selectAll("rect")
+            .data(d => d.stacked)
+            .enter()
+            .append("rect")
+            .attr("class", d => `bar ${d.category}`)
+            .attr("x", 0)
+            .attr("y", d => y(d.end))
+            .attr("height", d => y(d.start) - y(d.end))
+            .attr("width", x.bandwidth())
+            .on("mouseover", function(event, d) {
+                d3.select(this).attr("opacity", 0.8);
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html(`${d.category.toUpperCase()}<br>${d.value}%`)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function() {
+                d3.select(this).attr("opacity", 1);
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+        // Add legend
+        const legend = d3.select("#legend");
+        
+        const legendItems = legend.selectAll(".legend-item")
+            .data(categories)
+            .enter()
+            .append("div")
+            .attr("class", "legend-item");
+
+        legendItems.append("div")
+            .attr("class", d => `legend-color ${d}`);
+
+        legendItems.append("text")
+            .text(d => {
+                if (d === "positive") return "Positive 😊";
+                if (d === "neutral") return "Neutral 😐";
+                return "Negative 😠";
+            });
+
+        // Add Twitter bird decoration
+        svg.append("image")
+            .attr("xlink:href", "https://cdn-icons-png.flaticon.com/512/124/124021.png")
+            .attr("x", width - 40)
+            .attr("y", 10)
+            .attr("width", 30)
+            .attr("height", 30);
+    </script>
+</body>
+</html>
