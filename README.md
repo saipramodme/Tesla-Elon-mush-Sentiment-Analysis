@@ -19,9 +19,6 @@ An advanced, interactive data visualization project that analyzes the sentiment 
 
 ---
 
-## 📸 Preview
-
-> Add a screenshot or link to a live demo here if available.
 
 ---
 
@@ -33,7 +30,5 @@ An advanced, interactive data visualization project that analyzes the sentiment 
 - **Data**: CSV, preprocessed via Python (Pandas)
 - **Hosting**: GitHub Pages / Local Server
 
----
 
-## 📁 Project Structure
 
